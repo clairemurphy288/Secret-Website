@@ -2,12 +2,13 @@ import dotenv from "dotenv";
 dotenv.config()
 import express from 'express';
 import mongoose from 'mongoose';
-import encrypt from 'mongoose-encryption';
 import cors from 'cors';
 const app = express();
 app.use(express.static("public"));
 app.set('view engine', 'ejs');
 app.use(express.urlencoded({extended:false}));
+import bcrypt from 'bcrypt';
+const saltRounds = 10;
 
 app.use(cors());
 app.use(express.json());
@@ -24,9 +25,6 @@ const userSchema = new mongoose.Schema({
     email: String,
     password: String
 });
-//make sure to add plugin before model is created
-userSchema.plugin(encrypt, {secret: process.env.SECRET, encryptedFields: ["password"]});
-
 const PracticeUser = new mongoose.model("PracticeUser", userSchema)
 
 app.get('/', (req,res) => {
@@ -42,18 +40,21 @@ app.get('/register', (req,res) => {
 });
 
 app.post("/register", (req, res)=> {
-    const newUser = new PracticeUser({
-        email: req.body.username,
-        password: req.body.password
-    });
-    ///LEVEL 1 SECURITY: the page doesnt render until valid login!
-    newUser.save((err)=> {
-        if (err) {
-            console.log(err)
-        } else {
-            res.render("secrets")
-        }
+    bcrypt.hash(req.body.password, saltRounds, (err, hash)=> {
+        const newUser = new PracticeUser({
+            email: req.body.username,
+            password: hash
+        });
+        newUser.save((err)=> {
+            if (err) {
+                console.log(err)
+            } else {
+                res.render("secrets")
+            }
+        })
+
     })
+    ///LEVEL 1 SECURITY: the page doesnt render until valid login!
 });
 
 app.post("/login", (req,res) => {
@@ -65,9 +66,12 @@ app.post("/login", (req,res) => {
             console.log(err)
         } else {
             if (foundUser) {
-                if (foundUser.password === password) {
-                    res.render("secrets");
-                }
+                bcrypt.compare(password, foundUser.password, (err,result) => {
+                    if (result === true) {
+                        res.render("secrets");
+                    }
+
+                })
             }
         }
     })
