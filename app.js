@@ -1,5 +1,6 @@
+import dotenv from "dotenv";
+dotenv.config()
 import express from 'express';
-import ejs from 'ejs';
 import mongoose from 'mongoose';
 import encrypt from 'mongoose-encryption';
 import cors from 'cors';
@@ -13,8 +14,7 @@ app.use(express.json());
 
 ////////CONNECTING TO MONGODB & MONGOOSE
 // need to add uri to environment varibales. 
-const uri = "mongodb+srv://admin-claire-murphy:DRo4pOC5XjBUWYXh@cluster0.1knex.mongodb.net/?retryWrites=true&w=majority"
-mongoose.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+mongoose.connect(process.env.ATLAS_URI, { useNewUrlParser: true, useUnifiedTopology: true });
 const connection = mongoose.connection;
 connection.once('open', () => {
     console.log("MongoDB database connection established successfully!")
@@ -25,8 +25,7 @@ const userSchema = new mongoose.Schema({
     password: String
 });
 //make sure to add plugin before model is created
-const secret = "fvnjnfvjfjjejjfnefnn"
-userSchema.plugin(encrypt, {secret: secret, encryptedFields: ["password"]});
+userSchema.plugin(encrypt, {secret: process.env.SECRET, encryptedFields: ["password"]});
 
 const PracticeUser = new mongoose.model("PracticeUser", userSchema)
 
