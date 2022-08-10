@@ -1,6 +1,7 @@
 import express from 'express';
 import ejs from 'ejs';
 import mongoose from 'mongoose';
+import encrypt from 'mongoose-encryption';
 import cors from 'cors';
 const app = express();
 app.use(express.static("public"));
@@ -19,10 +20,14 @@ connection.once('open', () => {
     console.log("MongoDB database connection established successfully!")
 });
 
-const userSchema = {
+const userSchema = new mongoose.Schema({
     email: String,
     password: String
-}
+});
+//make sure to add plugin before model is created
+const secret = "fvnjnfvjfjjejjfnefnn"
+userSchema.plugin(encrypt, {secret: secret, encryptedFields: ["password"]});
+
 const PracticeUser = new mongoose.model("PracticeUser", userSchema)
 
 app.get('/', (req,res) => {
